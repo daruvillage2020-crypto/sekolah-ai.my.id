@@ -1,46 +1,26 @@
-# Astro Starter Kit: Basics
+# Sekolah AI
 
-```sh
-npm create astro@latest -- --template basics
-```
+Website ekosistem belajar AI yang dibangun dengan **Astro**, **TailwindCSS v4**, dan **Decap CMS (NetlifyCMS)**. Responsif untuk HP, tablet, dan desktop.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Halaman
 
-## 🚀 Project Structure
+- Home (`/`)
+- Tentang (`/tentang`)
+- Blog (`/blog`) — dikelola via CMS
+- Produk (`/produk`)
+- Komunitas (`/komunitas`)
+- Kontak (`/kontak`) — form Netlify
 
-Inside of your Astro project, you'll see the following folders and files:
+## Perintah
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+| Perintah          | Aksi                                |
+| ----------------- | ----------------------------------- |
+| `npm run dev`     | Jalankan server dev di `localhost:4321` |
+| `npm run build`   | Build situs ke `./dist/`            |
+| `npm run preview` | Preview hasil build                 |
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## CMS
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Panel admin tersedia di `/admin`. Menggunakan Decap CMS dengan `git-gateway`.
+Aktifkan **Netlify Identity** + **Git Gateway** di dashboard Netlify untuk mulai
+mengelola artikel blog.

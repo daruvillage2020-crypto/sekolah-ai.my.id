@@ -1,0 +1,50 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const channels = [
+  { name: "Discord", desc: "Diskusi harian, tanya jawab, dan kolaborasi proyek.", cta: "Gabung Discord" },
+  { name: "Telegram", desc: "Info kelas, event, dan pengumuman terbaru.", cta: "Gabung Telegram" },
+  { name: "WhatsApp", desc: "Grup belajar terkurasi sesuai minat.", cta: "Gabung Grup" },
+];
+
+const events = [
+  { date: "20 Mar 2026", title: "Webinar: AI untuk Bisnis Kecil" },
+  { date: "05 Apr 2026", title: "Workshop: Membangun Chatbot Pertama" },
+  { date: "18 Apr 2026", title: "Meetup Komunitas Sekolah AI" },
+];
+---
+
+<Layout title="Komunitas — Sekolah AI">
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-gray-900">Komunitas</h1>
+      <p class="mx-auto mt-3 max-w-2xl text-lg text-gray-600">
+        Belajar lebih seru bersama. Terhubung dengan ribuan pembelajar AI lainnya.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      {channels.map((c) => (
+        <div class="rounded-xl border border-gray-200 p-6 text-center">
+          <h2 class="text-lg font-semibold text-gray-900">{c.name}</h2>
+          <p class="mt-2 text-sm text-gray-600">{c.desc}</p>
+          <a href="/kontak" class="mt-4 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark">
+            {c.cta}
+          </a>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-16">
+      <h2 class="text-2xl font-bold text-gray-900">Agenda Mendatang</h2>
+      <ul class="mt-6 divide-y divide-gray-200 rounded-xl border border-gray-200">
+        {events.map((e) => (
+          <li class="flex flex-col gap-1 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <span class="font-medium text-gray-900">{e.title}</span>
+            <span class="text-sm text-brand">{e.date}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Layout>

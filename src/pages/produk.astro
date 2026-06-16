@@ -1,0 +1,76 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const products = [
+  {
+    name: "Kelas Dasar AI",
+    price: "Gratis",
+    desc: "Pengantar konsep AI, machine learning, dan penerapannya.",
+    features: ["10 modul video", "Latihan interaktif", "Sertifikat dasar"],
+    featured: false,
+  },
+  {
+    name: "Bootcamp AI Praktisi",
+    price: "Rp 1.500.000",
+    desc: "Program intensif membangun proyek AI dari nol hingga deploy.",
+    features: ["30 modul", "Proyek nyata", "Mentoring 1-on-1", "Sertifikat profesi"],
+    featured: true,
+  },
+  {
+    name: "Korporat & Tim",
+    price: "Hubungi Kami",
+    desc: "Pelatihan AI khusus untuk perusahaan dan instansi.",
+    features: ["Kurikulum custom", "Pelatih dedicated", "Laporan progres"],
+    featured: false,
+  },
+];
+---
+
+<Layout title="Produk — Sekolah AI">
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-gray-900">Produk Kami</h1>
+      <p class="mx-auto mt-3 max-w-2xl text-lg text-gray-600">
+        Pilih program belajar AI yang sesuai dengan kebutuhan dan tujuanmu.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      {products.map((p) => (
+        <div
+          class:list={[
+            "flex flex-col rounded-xl border p-6",
+            p.featured ? "border-brand shadow-lg" : "border-gray-200",
+          ]}
+        >
+          {p.featured && (
+            <span class="mb-3 inline-block w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-white">
+              Terpopuler
+            </span>
+          )}
+          <h2 class="text-xl font-semibold text-gray-900">{p.name}</h2>
+          <div class="mt-2 text-2xl font-bold text-brand">{p.price}</div>
+          <p class="mt-3 text-sm text-gray-600">{p.desc}</p>
+          <ul class="mt-4 flex-1 space-y-2 text-sm text-gray-600">
+            {p.features.map((f) => (
+              <li class="flex items-center gap-2">
+                <span class="text-brand">✓</span> {f}
+              </li>
+            ))}
+          </ul>
+          <a
+            href="/kontak"
+            class:list={[
+              "mt-6 rounded-lg px-4 py-2 text-center font-medium transition",
+              p.featured
+                ? "bg-brand text-white hover:bg-brand-dark"
+                : "border border-gray-300 text-gray-700 hover:bg-gray-50",
+            ]}
+          >
+            Pilih Paket
+          </a>
+        </div>
+      ))}
+    </div>
+  </section>
+</Layout>

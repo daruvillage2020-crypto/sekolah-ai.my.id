@@ -1,11 +1,79 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const features = [
+  { title: "Kurikulum Terkurasi", desc: "Materi AI dari dasar hingga lanjutan, disusun praktisi." },
+  { title: "Belajar Praktik", desc: "Proyek nyata dan studi kasus di setiap modul." },
+  { title: "Komunitas Aktif", desc: "Bergabung dengan pelajar dan mentor dari seluruh Indonesia." },
+];
+
+const stats = [
+  { value: "5.000+", label: "Pelajar" },
+  { value: "120+", label: "Modul" },
+  { value: "40+", label: "Mentor" },
+  { value: "98%", label: "Kepuasan" },
+];
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Sekolah AI — Belajar Kecerdasan Buatan">
+  <!-- Hero -->
+  <section class="bg-gradient-to-b from-blue-50 to-white">
+    <div class="mx-auto max-w-6xl px-4 py-20 text-center">
+      <span class="inline-block rounded-full bg-blue-100 px-4 py-1 text-sm font-medium text-brand">
+        Ekosistem Belajar AI
+      </span>
+      <h1 class="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+        Kuasai <span class="text-brand">Kecerdasan Buatan</span><br class="hidden sm:block" />
+        bersama Sekolah AI
+      </h1>
+      <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+        Platform belajar AI yang mudah diakses, praktis, dan didukung komunitas
+        yang berkembang. Mulai perjalananmu hari ini.
+      </p>
+      <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <a href="/produk" class="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark">
+          Lihat Produk
+        </a>
+        <a href="/tentang" class="rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-700 transition hover:bg-gray-50">
+          Pelajari Lebih Lanjut
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="grid gap-6 md:grid-cols-3">
+      {features.map((f) => (
+        <div class="rounded-xl border border-gray-200 p-6 transition hover:shadow-md">
+          <div class="mb-4 grid h-12 w-12 place-items-center rounded-lg bg-blue-100 text-brand text-xl font-bold">✦</div>
+          <h3 class="text-lg font-semibold text-gray-900">{f.title}</h3>
+          <p class="mt-2 text-sm text-gray-600">{f.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="bg-brand">
+    <div class="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-12 md:grid-cols-4">
+      {stats.map((s) => (
+        <div class="text-center text-white">
+          <div class="text-3xl font-bold">{s.value}</div>
+          <div class="mt-1 text-sm text-blue-100">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="mx-auto max-w-6xl px-4 py-16 text-center">
+    <h2 class="text-3xl font-bold text-gray-900">Siap mulai belajar AI?</h2>
+    <p class="mx-auto mt-3 max-w-xl text-gray-600">
+      Gabung komunitas dan temukan jalurmu di dunia kecerdasan buatan.
+    </p>
+    <a href="/kontak" class="mt-6 inline-block rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark">
+      Hubungi Kami
+    </a>
+  </section>
 </Layout>

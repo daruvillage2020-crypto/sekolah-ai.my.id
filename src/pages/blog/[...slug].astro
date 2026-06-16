@@ -1,0 +1,40 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+---
+
+<Layout title={`${post.data.title} — Sekolah AI`} description={post.data.description}>
+  <article class="mx-auto max-w-3xl px-4 py-16">
+    <a href="/blog" class="text-sm font-medium text-brand">← Kembali ke Blog</a>
+    <h1 class="mt-4 text-4xl font-bold text-gray-900">{post.data.title}</h1>
+    <div class="mt-2 text-sm text-gray-500">
+      {fmt(post.data.date)} · {post.data.author}
+    </div>
+    <div class="prose mt-8 max-w-none text-gray-700 prose-headings:text-gray-900 prose-headings:font-semibold prose-a:text-brand">
+      <Content />
+    </div>
+  </article>
+</Layout>
+
+<style is:global>
+  .prose h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 0.75rem; }
+  .prose p { margin-top: 1rem; line-height: 1.75; }
+  .prose ul, .prose ol { margin-top: 1rem; padding-left: 1.5rem; }
+  .prose ul { list-style: disc; }
+  .prose ol { list-style: decimal; }
+  .prose li { margin-top: 0.25rem; }
+</style>
