@@ -111,11 +111,7 @@ AI dapat menghasilkan:
 
 \* Menonton video pembelajaran
 
-
-
-\#### Pertemuan 2
-
-
+#### Pertemuan 2
 
 \* Praktik menggunakan aplikasi AI
 
