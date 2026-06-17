@@ -1,8 +1,9 @@
 ---
-title: "Etika dalam Pengembangan AI"
-description: "Mengapa etika penting saat membangun sistem kecerdasan buatan."
+title: Etika dalam Pengembangan AI
+description: Mengapa etika penting saat membangun sistem kecerdasan buatan.
 date: 2026-02-05
-author: "Tim Sekolah AI"
+author: Tim Sekolah AI
+cover: /uploads/etika-ai.png
 ---
 
 Seiring berkembangnya AI, pertimbangan etika menjadi semakin penting. Sistem
