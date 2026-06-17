@@ -24,6 +24,13 @@ const fmt = (d: Date) =>
     <div class="mt-2 text-sm text-gray-500">
       {fmt(post.data.date)} · {post.data.author}
     </div>
+    {post.data.cover && (
+      <img
+        src={post.data.cover}
+        alt={post.data.title}
+        class="mt-6 w-full rounded-xl object-cover"
+      />
+    )}
     <div class="prose mt-8 max-w-none text-gray-700 prose-headings:text-gray-900 prose-headings:font-semibold prose-a:text-brand">
       <Content />
     </div>

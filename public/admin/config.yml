@@ -18,4 +18,5 @@ collections:
       - { label: "Deskripsi", name: "description", widget: "text" }
       - { label: "Tanggal", name: "date", widget: "datetime" }
       - { label: "Penulis", name: "author", widget: "string", default: "Tim Sekolah AI" }
+      - { label: "Gambar Sampul", name: "cover", widget: "image", required: false }
       - { label: "Konten", name: "body", widget: "markdown" }

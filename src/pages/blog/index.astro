@@ -21,12 +21,22 @@ const fmt = (d: Date) =>
       {posts.map((post) => (
         <a
           href={`/blog/${post.id}`}
-          class="block rounded-xl border border-gray-200 p-6 transition hover:shadow-md"
+          class="block overflow-hidden rounded-xl border border-gray-200 transition hover:shadow-md"
         >
+          {post.data.cover && (
+            <img
+              src={post.data.cover}
+              alt={post.data.title}
+              class="h-48 w-full object-cover"
+              loading="lazy"
+            />
+          )}
+          <div class="p-6">
           <time class="text-sm text-brand">{fmt(post.data.date)}</time>
           <h2 class="mt-2 text-xl font-semibold text-gray-900">{post.data.title}</h2>
           <p class="mt-2 text-sm text-gray-600">{post.data.description}</p>
           <span class="mt-4 inline-block text-sm font-medium text-brand">Baca selengkapnya →</span>
+          </div>
         </a>
       ))}
     </div>
