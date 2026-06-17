@@ -6,6 +6,7 @@ description: Perkembangan teknologi Artificial Intelligence (AI) telah membawa
   dipercepat dengan bantuan AI tanpa mengurangi kualitas pembelajaran.
 date: 2026-06-17T10:48:00.000+07:00
 author: Tim Sekolah AI
+cover: /uploads/chatgpt-image-jun-17-2026-01_13_12-pm.png
 ---
 ## Pendahuluan
 
