@@ -167,9 +167,9 @@ Beberapa platform AI yang populer saat ini antara lain:
 
 Masing-masing memiliki kelebihan tersendiri dalam membantu penyusunan perangkat pembelajaran.
 
-\## Tips Menggunakan AI Secara Bijak
+## Tips Menggunakan AI Secara Bijak
 
-\### 1. Jangan Langsung Menyalin Hasil AI
+### 1. Jangan Langsung Menyalin Hasil AI
 
 Selalu lakukan pengecekan dan penyesuaian agar sesuai dengan kebutuhan siswa.
 
