@@ -1,8 +1,9 @@
 ---
-title: "Mengenal Kecerdasan Buatan untuk Pemula"
-description: "Panduan singkat memahami apa itu AI dan bagaimana memulainya."
+title: Mengenal Kecerdasan Buatan untuk Pemula
+description: Panduan singkat memahami apa itu AI dan bagaimana memulainya.
 date: 2026-01-10
-author: "Tim Sekolah AI"
+author: Tim Sekolah AI
+cover: /uploads/mengenal-ai.png
 ---
 
 Kecerdasan Buatan (AI) adalah cabang ilmu komputer yang berfokus pada pembuatan
