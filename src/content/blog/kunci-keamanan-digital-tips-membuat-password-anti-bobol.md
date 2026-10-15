@@ -1,7 +1,7 @@
 ---
 title: "Kunci Keamanan Digital: Tips Membuat Password Anti Bobol!"
 description: Amankan akunmu! Temukan tips praktis dan efektif untuk membuat password yang super kuat dan sulit dibobol.
-cover: https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80
+cover: https://images.unsplash.com/photo-1633265486064-086b219458ec?w=1200&q=80
 date: 2026-10-16T02:49:57.000+07:00
 author: Tim Sekolah AI
 ---

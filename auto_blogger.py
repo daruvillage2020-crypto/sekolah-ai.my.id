@@ -5,6 +5,7 @@ Output plain markdown, no JSON parsing issues.
 """
 
 import os
+import re
 import sys
 import hashlib
 import random
@@ -19,18 +20,127 @@ import json
 REPO_DIR = Path(os.path.expanduser("~/sekolah-ai.my.id"))
 CONTENT_DIR = REPO_DIR / "src/content/blog"
 
-# Unsplash cover images based on topic keywords
-UNSPLASH_COVERS = {
-    "ai": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&q=80",
-    "laptop": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&q=80",
-    "security": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80",
-    "school": "https://images.unsplash.com/photo-1562774053-701939374585?w=1200&q=80",
-    "coding": "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80",
-    "education": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&q=80",
-    "tech": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80",
-    "data": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
+# Pool foto Unsplash per kategori (natural/real photos).
+# Dipilih acak per artikel, dan dihindari duplikat dgn artikel yang sudah ada.
+PHOTO_POOLS = {
+    "ai": [
+        "photo-1677442136019-21780ecad995",
+        "photo-1620712943543-bcc4688e7485",
+        "photo-1555255707-c07966088b7b",
+        "photo-1526374965328-7f61d4dc18c5",
+        "photo-1451187580459-43490279c0fa",
+        "photo-1518770660439-4636190af475",
+    ],
+    "coding": [
+        "photo-1461749280684-dccba630e2f6",
+        "photo-1498050108023-c5249f4df085",
+        "photo-1517694712202-14dd9538aa97",
+        "photo-1555066931-4365d14bab8c",
+        "photo-1542831371-29b0f74f9713",
+        "photo-1504639725590-34d0984388bd",
+        "photo-1526379095098-d400fd0bf935",
+    ],
+    "laptop": [
+        "photo-1496181133206-80ce9b88a853",
+        "photo-1517430816045-df4b7de11d1d",
+        "photo-1531297484001-80022131f5a1",
+        "photo-1587620962725-abab7fe55159",
+    ],
+    "security": [
+        "photo-1563013544-824ae1b704d3",
+        "photo-1563986768609-322da13575f3",
+        "photo-1614064641938-3bbee52942c7",
+        "photo-1550751827-4bd374c3f58b",
+        "photo-1633265486064-086b219458ec",
+    ],
+    "school": [
+        "photo-1562774053-701939374585",
+        "photo-1580582932707-520aed937b7b",
+        "photo-1503676260728-1c00da094a0b",
+        "photo-1541339907198-e08756dedf3f",
+        "photo-1546410531-bb4caa6b424d",
+        "photo-1509062522246-3755977927d7",
+    ],
+    "education": [
+        "photo-1524178232363-1fb2b075b655",
+        "photo-1522071820081-009f0129c71c",
+        "photo-1521737604893-d14cc237f11d",
+        "photo-1600880292203-757bb62b4baf",
+        "photo-1516321318423-f06f85e504b3",
+        "photo-1517245386807-bb43f82c33c4",
+    ],
+    "data": [
+        "photo-1551288049-bebda4e38f71",
+        "photo-1531482615713-2afd69097998",
+        "photo-1553877522-43269d4ea984",
+        "photo-1552581234-26160f608093",
+        "photo-1519389950473-47ba0277781c",
+    ],
+    "tech": [
+        "photo-1499750310107-5fef28a66643",
+        "photo-1486312338219-ce68d2c6f44d",
+        "photo-1573164713988-8665fc963095",
+    ],
 }
 
+
+def _categorize(title: str) -> str:
+    """Map article title to a photo category."""
+    t = title.lower()
+    # word-boundary match utk keyword pendek biar tdk salah cocok (mis. "ai" dlm "wajib")
+    words = re.findall(r"[a-z0-9]+", t)
+    wset = set(words)
+
+    if ("ai" in wset) or any(k in t for k in ["kecerdasan buatan", "neural", "machine learning", "deep learning", "robot", "chatbot", "computer vision"]):
+        return "ai"
+    if "laptop" in wset or "laptop" in t:
+        return "laptop"
+    if any(k in t for k in ["password", "keamanan", "security", "bobol", "privasi", "hacking", "cyber"]):
+        return "security"
+    if any(k in t for k in ["website sekolah", "gerbang pendidikan"]):
+        return "school"
+    if any(k in t for k in ["coding", "programming", "developer", "programmer", "koding"]):
+        return "coding"
+    if any(k in t for k in ["data", "analisis", "analytics", "data science"]):
+        return "data"
+    if any(k in t for k in ["belajar", "guru", "siswa", "modul ajar", "pendidikan", "pelajar", "sekolah", "kelas", "kuliah"]):
+        return "education"
+    return "tech"
+
+
+def _used_covers() -> set:
+    """Collect cover URLs already used by existing articles."""
+    used = set()
+    if CONTENT_DIR.exists():
+        for f in CONTENT_DIR.glob("*.md"):
+            for line in f.read_text(encoding="utf-8", errors="ignore").splitlines():
+                if line.startswith("cover:"):
+                    used.add(line.split("cover:", 1)[1].strip())
+    return used
+
+
+def pick_cover_image(title: str) -> str:
+    """Pick a random, natural Unsplash cover for the article.
+
+    Chooses a photo pool by topic category, then picks randomly while
+    avoiding images already used by existing articles. Falls back to any
+    photo in the pool (or picsum) if the pool is exhausted.
+    """
+    cat = _categorize(title)
+    pool = PHOTO_POOLS.get(cat, PHOTO_POOLS["tech"])
+    used = _used_covers()
+
+    def to_url(pid: str) -> str:
+        return f"https://images.unsplash.com/{pid}?w=1200&q=80"
+
+    available = [p for p in pool if to_url(p) not in used]
+    if not available:
+        # Pool kategori habis -> fallback ke picsum unik per-judul (dijamin beda).
+        seed = hashlib.md5(title.encode("utf-8")).hexdigest()[:12]
+        return f"https://picsum.photos/seed/sekolahai-{seed}/1200/630"
+
+    chosen = random.choice(available)
+    return to_url(chosen)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
@@ -166,26 +276,6 @@ TULIS LANGSUNG KONTEN ARTIKELNYA (tanpa penjelasan apapun):"""
         "description": description[:160],
         "content": content,
     }
-
-
-def pick_cover_image(title: str) -> str:
-    """Pick Unsplash cover image based on title keywords."""
-    t = title.lower()
-    if any(k in t for k in ["ai", "kecerdasan", "buatan", "neural", "machine", "robot"]):
-        return UNSPLASH_COVERS["ai"]
-    if "laptop" in t:
-        return UNSPLASH_COVERS["laptop"]
-    if any(k in t for k in ["password", "keamanan", "security", "digital", "bobol"]):
-        return UNSPLASH_COVERS["security"]
-    if any(k in t for k in ["sekolah", "website sekolah", "gerbang pendidikan"]):
-        return UNSPLASH_COVERS["school"]
-    if any(k in t for k in ["coding", "programming", "developer", "programmer"]):
-        return UNSPLASH_COVERS["coding"]
-    if any(k in t for k in ["belajar", "guru", "siswa", "modul ajar", "pendidikan", "pelajar"]):
-        return UNSPLASH_COVERS["education"]
-    if any(k in t for k in ["data", "analisis", "analytics", "data science"]):
-        return UNSPLASH_COVERS["data"]
-    return UNSPLASH_COVERS["tech"]
 
 
 def slugify(text: str) -> str:

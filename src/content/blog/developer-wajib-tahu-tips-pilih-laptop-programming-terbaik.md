@@ -1,7 +1,7 @@
 ---
 title: Developer Wajib Tahu! Tips Pilih Laptop Programming Terbaik
 description: Bingung cari laptop untuk coding? Temukan panduan lengkap spesifikasi dan tips memilih laptop terbaik yang cocok untuk kebutuhan programmingmu.
-cover: https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&q=80
+cover: https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1200&q=80
 date: 2026-10-16T02:46:36.000+07:00
 author: Tim Sekolah AI
 ---
