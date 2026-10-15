@@ -167,8 +167,8 @@
         return;
       }
 
-      // Optional LLM backend upgrade (if configured via window.__ASK_AI_ENDPOINT__)
-      const endpoint = window.__ASK_AI_ENDPOINT__;
+      // Optional LLM backend upgrade (auto-detects Netlify function /api/ask).
+      const endpoint = window.__ASK_AI_ENDPOINT__ || "/api/ask";
       const ranked = index.map((d) => ({ d, s: score(qToks, d) })).sort((a, b) => b.s - a.s);
       const top = ranked.filter((r) => r.s > 0).slice(0, 3);
 

@@ -5,7 +5,7 @@ const SITE = "https://www.sekolah-ai.my.id";
 
 export const GET: APIRoute = async () => {
   const posts = await getCollection("blog");
-  const staticPages = ["", "tentang", "produk", "komunitas", "kontak", "blog"];
+  const staticPages = ["", "tentang", "produk", "komunitas", "kontak", "blog", "newsletter"];
 
   const urls = [
     ...staticPages.map((p) => (p === "" ? `${SITE}/` : `${SITE}/${p}/`)),

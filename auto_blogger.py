@@ -329,6 +329,23 @@ def gen_og_images():
         print(f"⚠️  {e}")
 
 
+def auto_social_post(title: str, slug: str, description: str):
+    """Broadcast new article to configured social channels (skips if no token)."""
+    script = REPO_DIR / "auto_social.py"
+    if not script.exists():
+        return
+    url = f"https://www.sekolah-ai.my.id/blog/{slug}/"
+    try:
+        r = subprocess.run(
+            ["python3", str(script), "--title", title, "--url", url, "--desc", description],
+            cwd=str(REPO_DIR), capture_output=True, text=True, timeout=120,
+        )
+        out = (r.stdout or "").strip().splitlines()
+        print("  " + (out[-1] if out else "📣 Auto-post: -(tidak ada output)"))
+    except Exception as e:
+        print(f"  ⚠️  Auto-post gagal: {e}")
+
+
 def git_push():
     print("  📤 Pushing to GitHub...", end=" ", flush=True)
     os.chdir(REPO_DIR)
@@ -370,12 +387,14 @@ def main():
         topics.extend(remaining[: args.count - len(topics)])
 
     successful = 0
+    published = []
     for i, topic in enumerate(topics[: args.count]):
         print(f"\n[{i+1}/{args.count}] 📝 Topic: {topic}")
         try:
             article = generate_article(topic)
             if article:
-                save_article(article, args.author)
+                path = save_article(article, args.author)
+                published.append((article["title"], path.stem, article["description"]))
                 successful += 1
         except Exception as e:
             print(f"  ❌ Error: {e}")
@@ -386,6 +405,8 @@ def main():
         gen_og_images()
         if not args.no_push:
             git_push()
+            for t, s, d in published:
+                auto_social_post(t, s, d)
             print("  🌐 Netlify auto-deploy dalam ~2 menit")
     else:
         print("  ❌ Gagal, cek error di atas")
