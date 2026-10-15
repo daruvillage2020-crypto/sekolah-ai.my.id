@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { getCollection } from "astro:content";
 
 const features = [
   { title: "Kurikulum Terkurasi", desc: "Materi AI dari dasar hingga lanjutan, disusun praktisi." },
@@ -13,6 +14,14 @@ const stats = [
   { value: "40+", label: "Mentor" },
   { value: "98%", label: "Kepuasan" },
 ];
+
+const allPosts = (await getCollection("blog")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const latestPosts = allPosts.slice(0, 2);
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 ---
 
 <Layout title="Sekolah AI — Belajar Kecerdasan Buatan">
@@ -51,6 +60,65 @@ const stats = [
           <p class="mt-2 text-sm text-gray-600">{f.desc}</p>
         </div>
       ))}
+    </div>
+  </section>
+
+  <!-- Featured Blog Posts -->
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="mb-8 flex items-end justify-between">
+      <div>
+        <h2 class="text-3xl font-bold text-gray-900">📝 Artikel Terbaru</h2>
+        <p class="mt-2 text-gray-600">Baca wawasan AI terbaru dari Sekolah AI</p>
+      </div>
+      <a href="/blog" class="hidden text-sm font-medium text-brand transition hover:underline sm:block">
+        Lihat semua artikel →
+      </a>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {latestPosts.map((post) => (
+        <a
+          href={`/blog/${post.id}`}
+          class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:shadow-xl"
+        >
+          {post.data.cover ? (
+            <div class="relative h-56 w-full overflow-hidden">
+              <img
+                src={post.data.cover}
+                alt={post.data.title}
+                class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            </div>
+          ) : (
+            <div class="flex h-56 w-full items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+              <span class="text-5xl">🧠</span>
+            </div>
+          )}
+          <div class="flex flex-1 flex-col p-6">
+            <time class="text-sm font-medium text-brand">{fmt(post.data.date)}</time>
+            <h3 class="mt-2 text-xl font-bold text-gray-900 group-hover:text-brand line-clamp-2">
+              {post.data.title}
+            </h3>
+            <p class="mt-2 line-clamp-2 text-sm text-gray-600">
+              {post.data.description}
+            </p>
+            <div class="mt-4 flex items-center text-sm font-medium text-brand">
+              Baca selengkapnya
+              <svg class="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-6 text-center sm:hidden">
+      <a href="/blog" class="inline-block rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+        Lihat semua artikel →
+      </a>
     </div>
   </section>
 
