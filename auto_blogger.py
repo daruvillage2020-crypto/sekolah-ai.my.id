@@ -18,6 +18,19 @@ import json
 
 REPO_DIR = Path(os.path.expanduser("~/sekolah-ai.my.id"))
 CONTENT_DIR = REPO_DIR / "src/content/blog"
+COVERS_DIR = REPO_DIR / "public" / "images" / "blog"
+
+# Gradient theme presets: (color1, color2, emoji)
+COVER_THEMES = [
+    ("#6a11cb", "#2575fc", "🤖"),  # AI / Tech
+    ("#0f0c29", "#302b63", "💻"),  # Programming
+    ("#1a1a2e", "#16213e", "🔒"),  # Security
+    ("#0f2027", "#203a43", "🏫"),  # Education
+    ("#00b4db", "#0083b0", "🌊"),  # Data/Blue
+    ("#11998e", "#38ef7d", "🌿"),  # Growth/Green
+    ("#fc4a1a", "#f7b733", "🔥"),  # Energy/Orange
+    ("#834d9b", "#d04ed6", "✨"),  # Creative/Purple
+]
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.5-flash"
@@ -156,6 +169,48 @@ TULIS LANGSUNG KONTEN ARTIKELNYA (tanpa penjelasan apapun):"""
     }
 
 
+def generate_cover_svg(title: str, slug: str) -> str:
+    """Generate aesthetic gradient SVG cover image for article."""
+    COVERS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Pick theme based on title hash
+    idx = hashlib.md5(title.encode()).digest()[0] % len(COVER_THEMES)
+    c1, c2, icon = COVER_THEMES[idx]
+
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="768" viewBox="0 0 1536 768">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:{c1};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:{c2};stop-opacity:1" />
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    </pattern>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1536" height="768" fill="url(#bg)"/>
+  <rect width="1536" height="768" fill="url(#grid)"/>
+  <circle cx="200" cy="650" r="180" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="1400" cy="150" r="240" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="768" cy="100" r="100" fill="rgba(255,255,255,0.05)"/>
+  <text x="120" y="420" font-size="200" filter="url(#glow)">{icon}</text>
+  <circle cx="1100" cy="500" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="1130" cy="470" r="4" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="1160" cy="490" r="5" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="1280" cy="180" r="8" fill="rgba(255,255,255,0.15)"/>
+  <circle cx="1320" cy="200" r="3" fill="rgba(255,255,255,0.2)"/>
+</svg>'''
+
+    svg_filename = f"cover-{slug}.svg"
+    svg_path = COVERS_DIR / svg_filename
+    svg_path.write_text(svg, encoding="utf-8")
+    print(f"  🎨 Cover: /images/blog/{svg_filename}")
+    return f"/images/blog/{svg_filename}"
+
+
 def slugify(text: str) -> str:
     slug = text.lower().replace(" ", "-")
     slug = "".join(c for c in slug if c.isalnum() or c == "-")
@@ -175,7 +230,11 @@ def save_article(article: dict, author: str = "Tim Sekolah AI") -> Path:
         filepath = CONTENT_DIR / f"{slug}-{suffix}.md"
 
     date_iso = now.strftime("%Y-%m-%dT%H:%M:%S.000+07:00")
-    frontmatter = f"---\ntitle: {title}\ndescription: {description}\ndate: {date_iso}\nauthor: {author}\n---\n\n"
+
+    # Generate cover SVG
+    cover_url = generate_cover_svg(title, slug)
+    
+    frontmatter = f"---\ntitle: \"{title}\"\ndescription: \"{description}\"\ncover: {cover_url}\ndate: {date_iso}\nauthor: {author}\n---\n\n"
     filepath.write_text(frontmatter + content, encoding="utf-8")
     print(f"  💾 Saved: {filepath.name}")
     return filepath
