@@ -1,5 +1,5 @@
 ---
-title: Website Sekolah: Gerbang Pendidikan di Era Digital
+title: "Website Sekolah: Gerbang Pendidikan di Era Digital"
 description: Website sekolah adalah wajah digital institusi. Pahami perannya yang krusial dalam membangun komunikasi efektif dan citra positif di era serba digital.
 date: 2026-10-16T02:42:53.000+07:00
 author: Tim Sekolah AI
