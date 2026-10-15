@@ -1,7 +1,7 @@
 ---
 title: "AI di Balik Layar: Membongkar Cara Kerja Kecerdasan Buatan dalam Keseharian Kita"
 description: Kecerdasan Buatan telah menyusup ke setiap aspek kehidupan kita. Mari selami bagaimana AI bekerja di balik layar, dari rekomendasi hingga navigasi, dalam artike
-cover: /images/blog/cover-ai-di-balik-layar-membongkar-cara-kerja-kecerdasan-buatan-dalam-keseharian-kita.svg
+cover: https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&q=80
 date: 2026-10-16T02:39:57.000+07:00
 author: Tim Sekolah AI
 ---
