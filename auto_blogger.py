@@ -1,41 +1,31 @@
 #!/usr/bin/env python3
 """
-Auto Blogger for sekolah-ai.my.id
-- Generate articles using OpenRouter AI API
-- Save as .md to src/content/blog/
-- Git commit & push → triggers Netlify deployment
-
-Usage:
-  ./auto_blogger.py              # generate 1 random article
-  ./auto_blogger.py --count 3   # generate 3 articles
-  ./auto_blogger.py --topic "tips belajar AI"  # specific topic
+Auto Blogger for sekolah-ai.my.id - Gemini Edition (robust)
+Output plain markdown, no JSON parsing issues.
 """
 
 import os
 import sys
-import json
 import hashlib
 import random
 import subprocess
 import argparse
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-
-# ─────────────────────── CONFIG ───────────────────────
+from urllib.request import Request, urlopen
+from urllib.error import URLError
+import json
 
 REPO_DIR = Path(os.path.expanduser("~/sekolah-ai.my.id"))
 CONTENT_DIR = REPO_DIR / "src/content/blog"
 
-# OpenRouter API
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = "openai/gpt-4o-mini"  # cheap & fast, change if needed
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
 
 WIB = timezone(timedelta(hours=7))
 
-# ─────────────────── TOPIC GENERATOR ───────────────────
-
 TOPICS = [
-    # Pendidikan
     "cara membuat modul ajar dengan AI",
     "tips belajar efektif untuk siswa",
     "manfaat AI dalam dunia pendidikan",
@@ -51,8 +41,6 @@ TOPICS = [
     "rekomendasi tools AI gratis untuk guru",
     "cara mengelola kelas online",
     "tips meningkatkan konsentrasi belajar",
-
-    # Teknologi / AI
     "apa itu machine learning dan contohnya",
     "perbedaan AI, ML, dan deep learning",
     "pengenalan neural network untuk pemula",
@@ -64,12 +52,9 @@ TOPICS = [
     "cara membuat chatbot sederhana",
     "pengenalan computer vision",
     "belajar prompt engineering untuk pemula",
-    "perbandingan GPT, Claude, dan Gemini",
     "cara menggunakan API AI untuk proyek sekolah",
     "AI untuk analisis data pendidikan",
     "membangun portfolio proyek AI",
-
-    # Website & Digital
     "cara domain .sch.id gratis untuk sekolah",
     "tips SEO untuk website sekolah",
     "cara membuat website sekolah gratis",
@@ -77,169 +62,144 @@ TOPICS = [
     "cara hosting website sekolah murah",
     "optimasi gambar untuk website",
     "pentingnya website sekolah di era digital",
+    "pengenalan data science untuk pemula",
+    "cara menggunakan ChatGPT untuk belajar",
+    "tips aman bersosial media untuk pelajar",
+    "membangun aplikasi sederhana dengan AI",
+    "cara membuat CV digital dengan AI",
 ]
 
-# ─────────────────── GENERATE ARTICLE ───────────────────
+def call_gemini(prompt: str) -> str:
+    """Call Gemini API and return text response."""
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.8,
+            "maxOutputTokens": 8192,
+        }
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = Request(GEMINI_URL, data=data, headers={"Content-Type": "application/json"})
+    with urlopen(req, timeout=180) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    if "candidates" not in body or not body["candidates"]:
+        if "promptFeedback" in body and body["promptFeedback"].get("blockReason"):
+            raise Exception(f"Blocked: {body['promptFeedback']['blockReason']}")
+        raise Exception(f"No candidates: {json.dumps(body)[:300]}")
+    return body["candidates"][0]["content"]["parts"][0]["text"]
+
 
 def generate_article(topic: str) -> dict:
-    """Generate an article using OpenRouter API."""
-    if not OPENROUTER_API_KEY:
-        print("❌ OPENROUTER_API_KEY not set!")
-        print("   export OPENROUTER_API_KEY='sk-or-v1-...'")
+    """Generate article title + description + content using Gemini (plain text)."""
+    if not GEMINI_API_KEY:
+        print("❌ GEMINI_API_KEY not set!")
         sys.exit(1)
 
     today = datetime.now(WIB)
-    date_str = today.strftime("%Y-%m-%dT%H:%M:%S.000+07:00")
-    
-    system_prompt = """Kamu adalah penulis blog tentang AI, teknologi, dan pendidikan untuk website Sekolah AI Indonesia.
 
-Tugasmu:
-1. Buat artikel blog dalam Bahasa Indonesia yang natural dan engaging
-2. Panjang: 800-1200 kata
-3. Gaya: informatif, praktis, mudah dipahami
-4. Struktur: judul menarik, pendahuluan, sub-topik (gunakan ##), kesimpulan
-5. Sertakan tips atau langkah praktis
-6. Jangan gunakan emoji berlebihan
+    # Step 1: Generate title + description (plain text, delimiter-based)
+    meta_prompt = f"""Buatlah judul artikel blog dan deskripsi singkat untuk topik berikut.
 
-OUTPUT FORMAT (hanya output JSON ini, tanpa teks lain):
-{
-  "title": "Judul Artikel",
-  "description": "Deskripsi singkat 1-2 kalimat",
-  "content": "Markdown content dari artikel lengkap"
-}"""
+Topik: {topic}
 
-    user_prompt = f"Buat artikel blog dengan topik: {topic}. Tanggal hari ini: {today.strftime('%d %B %Y')}"
+Format output HARUS seperti ini (2 baris saja, tanpa tambahan lain):
+JUDUL: <judul artikel yang menarik, maksimal 12 kata>
+DESKRIPSI: <deskripsi 1-2 kalimat, maksimal 160 karakter>"""
 
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.8,
-        "max_tokens": 4096,
+    print(f"  🤖 [1/2] Buat judul + deskripsi...", end=" ", flush=True)
+    meta_text = call_gemini(meta_prompt).strip()
+
+    title = ""
+    description = ""
+    for line in meta_text.split("\n"):
+        line = line.strip()
+        if line.upper().startswith("JUDUL:"):
+            title = line.split(":", 1)[1].strip()
+        elif line.upper().startswith("DESKRIPSI:"):
+            description = line.split(":", 1)[1].strip()
+
+    if not title:
+        # Fallback: gunakan topik sebagai judul
+        title = " ".join(w.capitalize() for w in topic.split())
+    if not description:
+        description = f"Artikel tentang {topic} untuk pembaca Sekolah AI Indonesia."
+
+    print(f"✅ '{title[:50]}'")
+
+    # Step 2: Generate full content
+    content_prompt = f"""Kamu adalah penulis blog profesional untuk website Sekolah AI Indonesia (sekolah-ai.my.id).
+
+Tulis artikel blog lengkap dalam Bahasa Indonesia dengan judul: "{title}"
+
+PERSYARATAN:
+- Panjang: 800-1200 kata
+- Gaya: informatif, praktis, mudah dipahami
+- Struktur: 
+  - Mulai langsung dengan paragraf Pendahuluan (tanpa heading "Pendahuluan" eksplisit)
+  - Gunakan heading "## " untuk sub-bagian
+  - Akhiri dengan paragraf Kesimpulan
+- Sertakan tips, langkah praktis, atau contoh nyata
+- Jangan gunakan emoji
+- Format markdown standar (## untuk sub judul, daftar dengan - atau 1.)
+- Jangan sertakan judul artikel di awal konten (judul sudah di frontmatter)
+
+TULIS LANGSUNG KONTEN ARTIKELNYA (tanpa penjelasan apapun):"""
+
+    print(f"  🤖 [2/2] Tulis konten artikel...", end=" ", flush=True)
+    content = call_gemini(content_prompt).strip()
+    print(f"✅ {len(content)} karakter")
+
+    return {
+        "title": title,
+        "description": description[:160],
+        "content": content,
     }
 
-    print(f"  🤖 Generating with {OPENROUTER_MODEL}...", end=" ", flush=True)
-    
-    result = subprocess.run(
-        [
-            "curl", "-s", "-w", "\\n%{http_code}",
-            "https://openrouter.ai/api/v1/chat/completions",
-            "-H", f"Authorization: Bearer {OPENROUTER_API_KEY}",
-            "-H", "Content-Type: application/json",
-            "-d", json.dumps(payload),
-        ],
-        capture_output=True, text=True, timeout=120,
-    )
-
-    lines = result.stdout.strip().split("\n")
-    http_code = lines[-1]
-    body = "\n".join(lines[:-1])
-
-    if http_code != "200":
-        print(f"❌ HTTP {http_code}")
-        print(body[:500])
-        return None
-
-    try:
-        data = json.loads(body)
-        raw = data["choices"][0]["message"]["content"]
-        # Clean up markdown code fences if present
-        raw = raw.strip()
-        if raw.startswith("```json"):
-            raw = raw[7:]
-        if raw.startswith("```"):
-            raw = raw[3:]
-        if raw.endswith("```"):
-            raw = raw[:-3]
-        raw = raw.strip()
-
-        article = json.loads(raw)
-        print(f"✅ '{article['title'][:50]}...'")
-        return article
-    except (json.JSONDecodeError, KeyError) as e:
-        print(f"❌ Parse error: {e}")
-        print(body[:500])
-        return None
-
-
-# ─────────────────── SAVE ARTICLE ───────────────────
 
 def slugify(text: str) -> str:
-    """Convert text to URL-friendly slug."""
-    slug = text.lower()
-    slug = slug.replace(" ", "-")
+    slug = text.lower().replace(" ", "-")
     slug = "".join(c for c in slug if c.isalnum() or c == "-")
-    slug = slug.strip("-")
-    # Truncate to avoid overly long filenames
     return slug[:120]
 
 
 def save_article(article: dict, author: str = "Tim Sekolah AI") -> Path:
-    """Save article as .md file."""
     title = article["title"]
-    description = article["description"]
+    description = article["description"][:160]
     content = article.get("content", "")
-
     now = datetime.now(WIB)
     slug = slugify(title)
-    
-    # Add suffix if slug already exists
+
     filepath = CONTENT_DIR / f"{slug}.md"
     if filepath.exists():
         suffix = hashlib.md5(title.encode()).hexdigest()[:6]
-        slug = f"{slug}-{suffix}"
-        filepath = CONTENT_DIR / f"{slug}.md"
+        filepath = CONTENT_DIR / f"{slug}-{suffix}.md"
 
     date_iso = now.strftime("%Y-%m-%dT%H:%M:%S.000+07:00")
-
-    frontmatter = f"""---
-title: {title}
-description: {description}
-date: {date_iso}
-author: {author}
----
-
-"""
-
+    frontmatter = f"---\ntitle: {title}\ndescription: {description}\ndate: {date_iso}\nauthor: {author}\n---\n\n"
     filepath.write_text(frontmatter + content, encoding="utf-8")
     print(f"  💾 Saved: {filepath.name}")
     return filepath
 
 
-# ─────────────────── GIT PUSH ───────────────────
-
 def git_push():
-    """Commit and push changes to trigger Netlify deploy."""
     print("  📤 Pushing to GitHub...", end=" ", flush=True)
-    
     os.chdir(REPO_DIR)
-    
-    # Check if there are changes
     result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
     if not result.stdout.strip():
-        print("⚠️  No changes to commit")
+        print("⚠️  No changes")
         return
-
     subprocess.run(["git", "add", "-A"], capture_output=True)
     subprocess.run(["git", "commit", "-m", f"Auto-blog: {datetime.now(WIB).strftime('%d %B %Y %H:%M')}"], capture_output=True)
     result = subprocess.run(["git", "push"], capture_output=True, text=True, timeout=60)
-    
-    if result.returncode == 0:
-        print(f"✅ Push OK")
-    else:
-        print(f"❌ Push failed: {result.stderr[:300]}")
+    print("✅ Push OK" if result.returncode == 0 else f"❌ {result.stderr[:200]}")
 
-
-# ─────────────────── MAIN ───────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Auto Blogger for sekolah-ai.my.id")
-    parser.add_argument("--count", "-c", type=int, default=1, help="Number of articles to generate")
-    parser.add_argument("--topic", "-t", type=str, help="Specific topic (otherwise random)")
-    parser.add_argument("--no-push", action="store_true", help="Don't push to GitHub")
-    parser.add_argument("--author", type=str, default="Tim Sekolah AI", help="Article author")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--count", "-c", type=int, default=1)
+    parser.add_argument("--topic", "-t", type=str)
+    parser.add_argument("--no-push", action="store_true")
+    parser.add_argument("--author", type=str, default="Tim Sekolah AI")
     args = parser.parse_args()
 
     print(f"\n{'='*60}")
@@ -248,21 +208,15 @@ def main():
     print(f"  📂 {CONTENT_DIR}")
     print(f"{'='*60}\n")
 
-    # Ensure repo exists
     if not REPO_DIR.exists():
-        print(f"❌ Repo dir {REPO_DIR} not found!")
-        print("   Clone it first: git clone <repo-url> ~/sekolah-ai.my.id")
+        print("❌ Repo tidak ditemukan")
         sys.exit(1)
 
-    topics = []
     if args.topic:
         topics = [args.topic]
     else:
         topics = random.sample(TOPICS, min(args.count, len(TOPICS)))
-
-    # Pick unique topics
     if len(topics) < args.count:
-        # Add more from shuffled pool
         remaining = [t for t in TOPICS if t not in topics]
         random.shuffle(remaining)
         topics.extend(remaining[: args.count - len(topics)])
@@ -270,21 +224,22 @@ def main():
     successful = 0
     for i, topic in enumerate(topics[: args.count]):
         print(f"\n[{i+1}/{args.count}] 📝 Topic: {topic}")
-        article = generate_article(topic)
-        if article:
-            save_article(article, args.author)
-            successful += 1
+        try:
+            article = generate_article(topic)
+            if article:
+                save_article(article, args.author)
+                successful += 1
+        except Exception as e:
+            print(f"  ❌ Error: {e}")
 
     print(f"\n{'='*60}")
     if successful > 0:
-        print(f"  ✅ {successful} article(s) generated successfully!")
+        print(f"  ✅ {successful} artikel sukses!")
         if not args.no_push:
             git_push()
-            print(f"  🌐 Netlify will deploy automatically in ~2 minutes")
-        else:
-            print(f"  ⏭️  Git push skipped (--no-push)")
+            print("  🌐 Netlify auto-deploy dalam ~2 menit")
     else:
-        print(f"  ❌ No articles generated, check errors above")
+        print("  ❌ Gagal, cek error di atas")
     print(f"{'='*60}\n")
 
 
