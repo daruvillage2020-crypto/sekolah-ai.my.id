@@ -21,6 +21,20 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={Astro.url} />
+    <link rel="alternate" type="application/rss+xml" title="Sekolah AI RSS" href="/rss.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="Sekolah AI" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      name: "Sekolah AI",
+      url: "https://www.sekolah-ai.my.id",
+      description: "Ekosistem belajar kecerdasan buatan untuk semua kalangan.",
+    })} />
     <title>{title}</title>
   </head>
   <body class="flex min-h-screen flex-col bg-white text-gray-800 antialiased">
