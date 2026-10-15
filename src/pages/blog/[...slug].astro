@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { relatedPosts } from "../../lib/similar";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -13,11 +14,19 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
+const allPosts = await getCollection("blog");
+const related = relatedPosts(post, allPosts, 3);
+
 const fmt = (d: Date) =>
   d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 ---
 
-<Layout title={`${post.data.title} — Sekolah AI`} description={post.data.description}>
+<Layout
+  title={`${post.data.title} — Sekolah AI`}
+  description={post.data.description}
+  ogImage={`/og/${post.id}.png`}
+  ogType="article"
+>
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -44,6 +53,37 @@ const fmt = (d: Date) =>
     <div class="prose mt-8 max-w-none text-gray-700 prose-headings:text-gray-900 prose-headings:font-semibold prose-a:text-brand">
       <Content />
     </div>
+
+    {related.length > 0 && (
+      <div class="mt-16 border-t border-gray-200 pt-8">
+        <h2 class="text-2xl font-bold text-gray-900">Baca juga</h2>
+        <div class="mt-6 grid gap-6 sm:grid-cols-3">
+          {related.map((rp) => (
+            <a
+              href={`/blog/${rp.id}`}
+              class="group block overflow-hidden rounded-xl border border-gray-200 transition hover:shadow-lg"
+            >
+              {rp.data.cover && (
+                <div class="h-32 w-full overflow-hidden">
+                  <img
+                    src={rp.data.cover}
+                    alt={rp.data.title}
+                    class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div class="p-4">
+                <time class="text-xs font-medium text-brand">{fmt(rp.data.date)}</time>
+                <h3 class="mt-1 line-clamp-2 text-sm font-semibold text-gray-900 group-hover:text-brand">
+                  {rp.data.title}
+                </h3>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
   </article>
 </Layout>
 

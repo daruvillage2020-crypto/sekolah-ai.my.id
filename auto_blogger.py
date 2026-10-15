@@ -307,6 +307,28 @@ def save_article(article: dict, author: str = "Tim Sekolah AI") -> Path:
     return filepath
 
 
+def gen_og_images():
+    """Generate OG share images for any new articles (idempotent)."""
+    script = REPO_DIR / "scripts" / "gen-og.mjs"
+    if not script.exists():
+        return
+    print("  🖼️  Generate OG images...", end=" ", flush=True)
+    try:
+        r = subprocess.run(
+            ["node", str(script)],
+            cwd=str(REPO_DIR),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if r.returncode == 0:
+            print("✅")
+        else:
+            print(f"⚠️  {r.stderr[:150]}")
+    except Exception as e:
+        print(f"⚠️  {e}")
+
+
 def git_push():
     print("  📤 Pushing to GitHub...", end=" ", flush=True)
     os.chdir(REPO_DIR)
@@ -361,6 +383,7 @@ def main():
     print(f"\n{'='*60}")
     if successful > 0:
         print(f"  ✅ {successful} artikel sukses!")
+        gen_og_images()
         if not args.no_push:
             git_push()
             print("  🌐 Netlify auto-deploy dalam ~2 menit")
