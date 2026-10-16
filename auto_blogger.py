@@ -160,7 +160,7 @@ GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_M
 # Gateway OpenAI-compatible (dipakai kalau GEMINI_API_KEY tidak valid/expired)
 AI_BASE_URL = os.environ.get("AI_BASE_URL", os.environ.get("EMBED_BASE_URL", "https://ai.sumopod.com/v1"))
 AI_API_KEY = os.environ.get("AI_API_KEY", os.environ.get("SUMPOD_API_KEY", ""))
-AI_MODEL = os.environ.get("AI_MODEL", "gemini/gemini-3.5-flash")
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-v4.1-flash:netra")
 
 WIB = timezone(timedelta(hours=7))
 

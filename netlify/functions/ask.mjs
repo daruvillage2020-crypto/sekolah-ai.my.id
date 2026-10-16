@@ -72,7 +72,7 @@ export default async (request) => {
 
   const base = process.env.AI_BASE_URL;
   const aiKey = process.env.AI_API_KEY;
-  const model = process.env.AI_MODEL || "gemini/gemini-3.5-flash";
+  const model = process.env.AI_MODEL || "deepseek-v4.1-flash:netra";
   const gemKey = process.env.GEMINI_API_KEY;
 
   try {
