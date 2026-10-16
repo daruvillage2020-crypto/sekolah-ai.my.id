@@ -1,78 +1,87 @@
-// Netlify Function: optional LLM upgrade untuk "Tanya AI".
-// Aktif otomatis kalau env GEMINI_API_KEY diset di Netlify.
-// Tanpa key, widget tetap jalan pakai search lokal (client-side).
+// Netlify Function: LLM backend untuk "Tanya AI".
+//
+// Backend dipilih otomatis dari env yang tersedia:
+//   1. AI_BASE_URL + AI_API_KEY  -> gateway OpenAI-compatible (mis. ai.sumopod.com)
+//   2. GEMINI_API_KEY            -> Google Gemini langsung
+// Kalau tidak ada, balikan answer:null dan widget pakai pencarian lokal.
+
+const SYSTEM = `Kamu adalah asisten ramah website Sekolah AI Indonesia (sekolah-ai.my.id).
+Jawab pertanyaan pengunjung HANYA berdasarkan konteks artikel yang diberikan.
+Jika konteks tidak cukup, katakan dengan jujur dan sarankan membaca blog di /blog.
+Jawab singkat (maks 120 kata), dalam Bahasa Indonesia, ramah, tanpa emoji berlebihan.`;
+
+const json = (obj, status = 200) =>
+  new Response(JSON.stringify(obj), {
+    status,
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+
+async function viaGateway(base, key, model, prompt) {
+  const res = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.6,
+      max_tokens: 700,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return data?.choices?.[0]?.message?.content?.trim() || null;
+}
+
+async function viaGemini(key, prompt) {
+  const model = "gemini-2.5-flash";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${SYSTEM}\n\n${prompt}` }] }],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 1024,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+    }
+  );
+  const data = await res.json().catch(() => ({}));
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+}
 
 export default async (request) => {
-  if (request.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) {
-    return new Response(JSON.stringify({ answer: null, reason: "no_key" }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   let body;
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Bad JSON" }), { status: 400 });
+    return json({ error: "Bad JSON" }, 400);
   }
 
   const { question = "", context = "" } = body || {};
-  if (!question.trim()) {
-    return new Response(JSON.stringify({ answer: null }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  if (!question.trim()) return json({ answer: null });
 
-  const model = "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const prompt = `KONTEKS ARTIKEL:\n${context.slice(0, 12000)}\n\nPERTANYAAN: ${question}\n\nJAWABAN:`;
 
-  const prompt = `Kamu adalah asisten ramah website Sekolah AI Indonesia (sekolah-ai.my.id).
-Jawab pertanyaan pengunjung HANYA berdasarkan konteks artikel berikut. Jika konteks tidak cukup, katakan dengan jujur dan sarankan mencari di blog.
-Jawab singkat (maks 120 kata), dalam Bahasa Indonesia, ramah, tanpa emoji berlebihan.
-
-KONTEKS ARTIKEL:
-${context.slice(0, 12000)}
-
-PERTANYAAN: ${question}
-
-JAWABAN:`;
+  const base = process.env.AI_BASE_URL;
+  const aiKey = process.env.AI_API_KEY;
+  const model = process.env.AI_MODEL || "gemini/gemini-3.5-flash";
+  const gemKey = process.env.GEMINI_API_KEY;
 
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 1024,
-          // Matikan "thinking" — kalau tidak, budget output habis & jawaban kosong.
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-    });
-    const data = await res.json();
-    const answer =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
-    return new Response(JSON.stringify({ answer }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    let answer = null;
+    if (base && aiKey) answer = await viaGateway(base, aiKey, model, prompt);
+    if (!answer && gemKey) answer = await viaGemini(gemKey, prompt);
+    return json({ answer });
   } catch (e) {
-    return new Response(JSON.stringify({ answer: null, error: String(e) }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return json({ answer: null, error: String(e) }, 500);
   }
 };
 

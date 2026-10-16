@@ -20,6 +20,18 @@ import json
 REPO_DIR = Path(os.path.expanduser("~/sekolah-ai.my.id"))
 CONTENT_DIR = REPO_DIR / "src/content/blog"
 
+# Muat kredensial AI dari file rahasia (chmod 600, di luar repo).
+_SECRETS = Path(os.path.expanduser("~/.config/openclaw/ai.env"))
+if _SECRETS.exists():
+    for _line in _SECRETS.read_text().splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _k, _v = _line.split("=", 1)
+        _k, _v = _k.strip(), _v.strip().strip('"').strip("'")
+        if _k and _k not in os.environ:
+            os.environ[_k] = _v
+
 # Pool foto Unsplash per kategori (natural/real photos).
 # Dipilih acak per artikel, dan dihindari duplikat dgn artikel yang sudah ada.
 PHOTO_POOLS = {
@@ -145,6 +157,11 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
 
+# Gateway OpenAI-compatible (dipakai kalau GEMINI_API_KEY tidak valid/expired)
+AI_BASE_URL = os.environ.get("AI_BASE_URL", os.environ.get("EMBED_BASE_URL", "https://ai.sumopod.com/v1"))
+AI_API_KEY = os.environ.get("AI_API_KEY", os.environ.get("SUMPOD_API_KEY", ""))
+AI_MODEL = os.environ.get("AI_MODEL", "gemini/gemini-3.5-flash")
+
 WIB = timezone(timedelta(hours=7))
 
 TOPICS = [
@@ -191,6 +208,25 @@ TOPICS = [
     "cara membuat CV digital dengan AI",
 ]
 
+def call_gateway(prompt: str) -> str:
+    """Call OpenAI-compatible gateway. Returns text or raises."""
+    payload = {
+        "model": AI_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.8,
+        "max_tokens": 8000,
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = Request(
+        f"{AI_BASE_URL.rstrip('/')}/chat/completions",
+        data=data,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {AI_API_KEY}"},
+    )
+    with urlopen(req, timeout=180) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    return body["choices"][0]["message"]["content"]
+
+
 def call_gemini(prompt: str) -> str:
     """Call Gemini API and return text response."""
     payload = {
@@ -198,6 +234,7 @@ def call_gemini(prompt: str) -> str:
         "generationConfig": {
             "temperature": 0.8,
             "maxOutputTokens": 8192,
+            "thinkingConfig": {"thinkingBudget": 0},
         }
     }
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -211,10 +248,22 @@ def call_gemini(prompt: str) -> str:
     return body["candidates"][0]["content"]["parts"][0]["text"]
 
 
+def call_ai(prompt: str) -> str:
+    """Prefer gateway when configured; fall back to Gemini direct."""
+    if AI_API_KEY:
+        try:
+            return call_gateway(prompt)
+        except Exception as e:
+            print(f"  ⚠️  Gateway gagal ({str(e)[:80]}), coba Gemini langsung...")
+    if GEMINI_API_KEY:
+        return call_gemini(prompt)
+    raise Exception("Tidak ada kredensial AI (set AI_API_KEY atau GEMINI_API_KEY)")
+
+
 def generate_article(topic: str) -> dict:
     """Generate article title + description + content using Gemini (plain text)."""
-    if not GEMINI_API_KEY:
-        print("❌ GEMINI_API_KEY not set!")
+    if not (AI_API_KEY or GEMINI_API_KEY):
+        print("❌ Tidak ada kredensial AI (set AI_API_KEY atau GEMINI_API_KEY)")
         sys.exit(1)
 
     today = datetime.now(WIB)
@@ -229,7 +278,7 @@ JUDUL: <judul artikel yang menarik, maksimal 12 kata>
 DESKRIPSI: <deskripsi 1-2 kalimat, maksimal 160 karakter>"""
 
     print(f"  🤖 [1/2] Buat judul + deskripsi...", end=" ", flush=True)
-    meta_text = call_gemini(meta_prompt).strip()
+    meta_text = call_ai(meta_prompt).strip()
 
     title = ""
     description = ""
@@ -268,7 +317,7 @@ PERSYARATAN:
 TULIS LANGSUNG KONTEN ARTIKELNYA (tanpa penjelasan apapun):"""
 
     print(f"  🤖 [2/2] Tulis konten artikel...", end=" ", flush=True)
-    content = call_gemini(content_prompt).strip()
+    content = call_ai(content_prompt).strip()
     print(f"✅ {len(content)} karakter")
 
     return {
