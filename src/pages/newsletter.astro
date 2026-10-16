@@ -21,10 +21,10 @@ import Layout from "../layouts/Layout.astro";
     </div>
 
     <form
+      id="newsletter-form"
       name="newsletter"
       method="POST"
-      data-netlify="true"
-      netlify-honeypot="bot-field"
+      action="/api/submit"
       class="mt-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
     >
       <input type="hidden" name="form-name" value="newsletter" />
@@ -58,10 +58,41 @@ import Layout from "../layouts/Layout.astro";
       >
         Berlangganan Gratis
       </button>
+      <p id="newsletter-status" class="mt-3 hidden text-center text-sm"></p>
       <p class="mt-3 text-center text-xs text-gray-500">
         Kami hanya mengirim konten berkualitas. Bukan spam.
       </p>
     </form>
+
+    <script>
+      const nf = document.getElementById("newsletter-form");
+      const ns = document.getElementById("newsletter-status");
+      nf?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = nf.querySelector('button[type="submit"]');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Mendaftarkan...";
+        try {
+          const res = await fetch(nf.action, { method: "POST", body: new FormData(nf) });
+          const ok = res.ok && (await res.json()).ok;
+          ns.className = ok
+            ? "mt-3 text-center text-sm font-medium text-green-700"
+            : "mt-3 text-center text-sm font-medium text-red-600";
+          ns.textContent = ok
+            ? "🎉 Berhasil! Cek inbox email kamu ya."
+            : "❌ Gagal mendaftar. Coba lagi sebentar lagi.";
+          if (ok) nf.reset();
+        } catch {
+          ns.className = "mt-3 text-center text-sm font-medium text-red-600";
+          ns.textContent = "❌ Gagal mendaftar. Cek koneksi lalu coba lagi.";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+          ns.classList.remove("hidden");
+        }
+      });
+    </script>
 
     <ul class="mt-8 grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
       <li class="rounded-xl border border-gray-200 p-4">📬 2 artikel baru / hari</li>

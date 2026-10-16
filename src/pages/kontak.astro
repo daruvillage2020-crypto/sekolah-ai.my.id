@@ -28,10 +28,10 @@ import Layout from "../layouts/Layout.astro";
       </div>
 
       <form
+        id="kontak-form"
         name="kontak"
         method="POST"
-        data-netlify="true"
-        netlify-honeypot="bot-field"
+        action="/api/submit"
         class="space-y-4"
       >
         <input type="hidden" name="form-name" value="kontak" />
@@ -74,7 +74,38 @@ import Layout from "../layouts/Layout.astro";
         >
           Kirim Pesan
         </button>
+        <p id="kontak-status" class="hidden text-sm"></p>
       </form>
+
+      <script>
+        const f = document.getElementById("kontak-form");
+        const st = document.getElementById("kontak-status");
+        f?.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = f.querySelector('button[type="submit"]');
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Mengirim...";
+          try {
+            const res = await fetch(f.action, { method: "POST", body: new FormData(f) });
+            const ok = res.ok && (await res.json()).ok;
+            st.className = ok
+              ? "text-sm font-medium text-green-700"
+              : "text-sm font-medium text-red-600";
+            st.textContent = ok
+              ? "✅ Pesan terkirim! Kami akan membalas via email secepatnya."
+              : "❌ Gagal mengirim. Coba lagi atau hubungi kami via email.";
+            if (ok) f.reset();
+          } catch {
+            st.className = "text-sm font-medium text-red-600";
+            st.textContent = "❌ Gagal mengirim. Cek koneksi lalu coba lagi.";
+          } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+            st.classList.remove("hidden");
+          }
+        });
+      </script>
     </div>
   </section>
 </Layout>
