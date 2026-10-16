@@ -334,7 +334,7 @@ def auto_social_post(title: str, slug: str, description: str):
     script = REPO_DIR / "auto_social.py"
     if not script.exists():
         return
-    url = f"https://www.sekolah-ai.my.id/blog/{slug}/"
+    url = f"https://sekolah-ai.my.id/blog/{slug}/"
     try:
         r = subprocess.run(
             ["python3", str(script), "--title", title, "--url", url, "--desc", description],

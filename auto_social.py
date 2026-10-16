@@ -22,7 +22,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 WIB = timezone(timedelta(hours=7))
-SITE = "https://www.sekolah-ai.my.id"
+SITE = "https://sekolah-ai.my.id"
 
 
 def post_telegram(title: str, url: str, desc: str) -> bool:
