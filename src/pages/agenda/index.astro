@@ -1,0 +1,129 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import EventCard from "../../components/EventCard.astro";
+import { upcoming, past, TYPE_LABEL } from "../../lib/events";
+
+const all = (await getCollection("events")) as any[];
+const next = upcoming(all);
+const done = past(all);
+
+const types = ["semua", ...Object.keys(TYPE_LABEL)];
+const counts: Record<string, number> = { semua: next.length };
+for (const t of types.slice(1)) counts[t] = next.filter((e) => e.data.type === t).length;
+---
+
+<Layout
+  title="Agenda & Event — Sekolah AI"
+  description="Ikuti workshop, bootcamp, webinar, dan meetup seputar kecerdasan buatan bersama Sekolah AI."
+>
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(
+      next.slice(0, 20).map((e) => ({
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.data.title,
+        description: e.data.description,
+        startDate: e.data.startDate.toISOString(),
+        endDate: (e.data.endDate ?? e.data.startDate).toISOString(),
+        eventAttendanceMode:
+          e.data.mode === "online"
+            ? "https://schema.org/OnlineEventAttendanceMode"
+            : "https://schema.org/OfflineEventAttendanceMode",
+        location: {
+          "@type": "Place",
+          name: e.data.location,
+        },
+        organizer: { "@type": "Organization", name: "Sekolah AI" },
+        offers: {
+          "@type": "Offer",
+          price: /gratis/i.test(e.data.price) ? "0" : e.data.price,
+          priceCurrency: "IDR",
+          url: e.data.registrationUrl || `https://sekolah-ai.my.id/agenda/${e.id}/`,
+        },
+      }))
+    )}
+  />
+
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <header class="max-w-2xl">
+      <p class="text-sm font-semibold uppercase tracking-wide text-brand">Agenda</p>
+      <h1 class="mt-2 text-4xl font-bold text-gray-900">Event & Kegiatan Sekolah AI</h1>
+      <p class="mt-4 text-lg text-gray-600">
+        Workshop, bootcamp, webinar, dan meetup untuk belajar kecerdasan buatan
+        bersama praktisi. Ikuti yang cocok buat kamu!
+      </p>
+    </header>
+
+    {next.length === 0 ? (
+      <div class="mt-10 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+        <p class="text-lg font-semibold text-gray-700">Belum ada agenda terdekat 😴</p>
+        <p class="mt-2 text-sm text-gray-500">
+          Pantau terus halaman ini atau gabung <a href="/newsletter" class="text-brand underline">newsletter</a> biar dapet info duluan.
+        </p>
+      </div>
+    ) : (
+      <>
+        <div class="mt-8 flex flex-wrap gap-2" id="filters">
+          {types.map((t, i) => (
+            <button
+              data-filter={t}
+              class:list={[
+                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                i === 0
+                  ? "border-brand bg-brand text-white"
+                  : "border-gray-300 bg-white text-gray-700 hover:border-brand hover:text-brand",
+              ]}
+            >
+              {t === "semua" ? "Semua" : TYPE_LABEL[t]} ({counts[t]})
+            </button>
+          ))}
+        </div>
+
+        <div id="event-grid" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {next.map((e) => (
+            <div data-type={e.data.type}>
+              <EventCard event={e} />
+            </div>
+          ))}
+        </div>
+      </>
+    )}
+
+    {done.length > 0 && (
+      <section class="mt-16 border-t border-gray-200 pt-10">
+        <h2 class="text-2xl font-bold text-gray-900">Agenda yang Sudah Berlalu</h2>
+        <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {done.map((e) => <EventCard event={e} />)}
+        </div>
+      </section>
+    )}
+  </section>
+
+  <script>
+    const buttons = document.querySelectorAll<HTMLButtonElement>("#filters button");
+    const items = document.querySelectorAll<HTMLElement>("#event-grid [data-type]");
+    const active = [
+      "border-brand",
+      "bg-brand",
+      "text-white",
+    ];
+    const idle = ["border-gray-300", "bg-white", "text-gray-700"];
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const f = btn.dataset.filter;
+        buttons.forEach((b) => {
+          b.classList.remove(...active);
+          b.classList.add(...idle);
+        });
+        btn.classList.remove(...idle);
+        btn.classList.add(...active);
+        items.forEach((el) => {
+          el.style.display = f === "semua" || el.dataset.type === f ? "" : "none";
+        });
+      });
+    });
+  </script>
+</Layout>

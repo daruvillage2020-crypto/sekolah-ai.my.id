@@ -1,6 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { getCollection } from "astro:content";
+import EventCard from "../components/EventCard.astro";
+import { upcoming } from "../lib/events";
 
 const features = [
   { title: "Kurikulum Terkurasi", desc: "Materi AI dari dasar hingga lanjutan, disusun praktisi." },
@@ -19,6 +21,8 @@ const allPosts = (await getCollection("blog")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
 const latestPosts = allPosts.slice(0, 2);
+
+const nextEvents = upcoming(await getCollection("events")).slice(0, 3);
 
 const fmt = (d: Date) =>
   d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
@@ -62,6 +66,31 @@ const fmt = (d: Date) =>
       ))}
     </div>
   </section>
+
+  <!-- Agenda Terdekat -->
+  {nextEvents.length > 0 && (
+    <section class="bg-gray-50">
+      <div class="mx-auto max-w-6xl px-4 py-16">
+        <div class="mb-8 flex items-end justify-between">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">📅 Agenda Terdekat</h2>
+            <p class="mt-2 text-gray-600">Workshop, webinar, dan kegiatan seru lainnya</p>
+          </div>
+          <a href="/agenda" class="hidden text-sm font-medium text-brand transition hover:underline sm:block">
+            Lihat semua agenda →
+          </a>
+        </div>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {nextEvents.map((e) => <EventCard event={e} />)}
+        </div>
+        <div class="mt-8 text-center sm:hidden">
+          <a href="/agenda" class="text-sm font-medium text-brand hover:underline">
+            Lihat semua agenda →
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
 
   <!-- Featured Blog Posts -->
   <section class="mx-auto max-w-6xl px-4 py-16">

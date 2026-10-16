@@ -1,0 +1,167 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import EventCard from "../../components/EventCard.astro";
+import {
+  eventStatus,
+  STATUS_LABEL,
+  TYPE_LABEL,
+  MODE_LABEL,
+  fmtDate,
+  fmtDateShort,
+  upcoming,
+} from "../../lib/events";
+
+export async function getStaticPaths() {
+  const events = await getCollection("events");
+  return events.map((event) => ({ params: { slug: event.id }, props: { event } }));
+}
+
+const { event } = Astro.props as any;const { Content } = await render(event);
+const d = event.data;
+
+const status = eventStatus(event);
+const open = status === "dibuka" || status === "berlangsung";
+
+const others = upcoming(await getCollection("events")).filter((e) => e.id !== event.id).slice(0, 3);
+
+const modeIcon = { online: "💻", offline: "📍", hybrid: "🔀" }[d.mode] ?? "📌";
+---
+
+<Layout
+  title={`${d.title} — Agenda Sekolah AI`}
+  description={d.description}
+  ogImage={d.cover || "/og/default.png"}
+  ogType="article"
+>
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: d.title,
+      description: d.description,
+      startDate: d.startDate.toISOString(),
+      endDate: (d.endDate ?? d.startDate).toISOString(),
+      eventStatus:
+        status === "selesai"
+          ? "https://schema.org/EventCancelled".replace("Cancelled", "Scheduled")
+          : "https://schema.org/EventScheduled",
+      eventAttendanceMode:
+        d.mode === "online"
+          ? "https://schema.org/OnlineEventAttendanceMode"
+          : "https://schema.org/OfflineEventAttendanceMode",
+      location: { "@type": "Place", name: d.location },
+      organizer: { "@type": "Organization", name: "Sekolah AI", url: "https://sekolah-ai.my.id" },
+      offers: {
+        "@type": "Offer",
+        price: /gratis/i.test(d.price) ? "0" : d.price,
+        priceCurrency: "IDR",
+        availability: open
+          ? "https://schema.org/InStock"
+          : "https://schema.org/SoldOut",
+        url: d.registrationUrl || `https://sekolah-ai.my.id/agenda/${event.id}/`,
+      },
+    })}
+  />
+
+  <article class="mx-auto max-w-3xl px-4 py-16">
+    <a href="/agenda" class="text-sm font-medium text-brand">← Semua agenda</a>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      <span class="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+        {TYPE_LABEL[d.type] ?? d.type}
+      </span>
+      <span
+        class:list={[
+          "rounded-full px-3 py-1 text-xs font-semibold",
+          status === "dibuka" && "bg-green-100 text-green-800",
+          status === "berlangsung" && "bg-amber-100 text-amber-800",
+          status === "selesai" && "bg-gray-200 text-gray-600",
+          status === "ditutup" && "bg-red-100 text-red-700",
+        ]}
+      >
+        {STATUS_LABEL[status]}
+      </span>
+    </div>
+
+    <h1 class="mt-4 text-4xl font-bold text-gray-900">{d.title}</h1>
+
+    {d.cover && (
+      <img src={d.cover} alt={d.title} class="mt-6 w-full rounded-xl object-cover" />
+    )}
+
+    <dl class="mt-8 grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-6 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Tanggal</dt>
+        <dd class="mt-1 font-medium text-gray-900">
+          {fmtDate(d.startDate)}
+          {d.endDate ? ` – ${fmtDate(d.endDate)}` : ""}
+        </dd>
+      </div>
+      {d.time && (
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Waktu</dt>
+          <dd class="mt-1 font-medium text-gray-900">{d.time}</dd>
+        </div>
+      )}
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Mode</dt>
+        <dd class="mt-1 font-medium text-gray-900">
+          {modeIcon} {MODE_LABEL[d.mode] ?? d.mode}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Lokasi</dt>
+        <dd class="mt-1 font-medium text-gray-900">{d.location}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Biaya</dt>
+        <dd class="mt-1 font-medium text-gray-900">{d.price}</dd>
+      </div>
+      {d.speaker && (
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Narasumber</dt>
+          <dd class="mt-1 font-medium text-gray-900">{d.speaker}</dd>
+        </div>
+      )}
+    </dl>
+
+    <div class="prose mt-8 max-w-none text-gray-700 prose-headings:text-gray-900 prose-headings:font-semibold prose-a:text-brand">
+      <Content />
+    </div>
+
+    {open && (d.registrationUrl || d.registrationNote) && (
+      <div class="mt-10 rounded-xl border border-brand/30 bg-brand/5 p-6 text-center">
+        {d.registrationNote && (
+          <p class="mb-4 text-sm text-gray-700">{d.registrationNote}</p>
+        )}
+        {d.registrationUrl && (
+          <a
+            href={d.registrationUrl}
+            target="_blank"
+            rel="noopener"
+            class="inline-block rounded-lg bg-brand px-8 py-3 font-semibold text-white transition-colors hover:bg-brand-dark"
+          >
+            Daftar Sekarang →
+          </a>
+        )}
+      </div>
+    )}
+
+    {status === "selesai" && (
+      <div class="mt-10 rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-600">
+        Kegiatan ini sudah selesai. Terima kasih untuk yang sudah ikut! 🎉
+      </div>
+    )}
+
+    {others.length > 0 && (
+      <div class="mt-16 border-t border-gray-200 pt-8">
+        <h2 class="text-2xl font-bold text-gray-900">Agenda Lainnya</h2>
+        <div class="mt-6 grid gap-6 sm:grid-cols-3">
+          {others.map((e) => <EventCard event={e} />)}
+        </div>
+      </div>
+    )}
+  </article>
+</Layout>
