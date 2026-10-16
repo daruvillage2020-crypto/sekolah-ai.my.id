@@ -51,7 +51,12 @@ JAWABAN:`;
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 512 },
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 1024,
+          // Matikan "thinking" — kalau tidak, budget output habis & jawaban kosong.
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     });
     const data = await res.json();
