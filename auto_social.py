@@ -24,6 +24,19 @@ from datetime import datetime, timezone, timedelta
 WIB = timezone(timedelta(hours=7))
 SITE = "https://sekolah-ai.my.id"
 
+# Muat token dari file rahasia (chmod 600, di luar repo).
+# Format: KEY=value per baris. Kalau env sudah diset, env menang.
+_SECRETS = Path(os.path.expanduser("~/.config/openclaw/social.env"))
+if _SECRETS.exists():
+    for _line in _SECRETS.read_text().splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _k, _v = _line.split("=", 1)
+        _k, _v = _k.strip(), _v.strip().strip('"').strip("'")
+        if _k and _k not in os.environ:
+            os.environ[_k] = _v
+
 
 def post_telegram(title: str, url: str, desc: str) -> bool:
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
