@@ -427,6 +427,23 @@ def git_push():
     print("✅ Push OK" if result.returncode == 0 else f"❌ {result.stderr[:200]}")
 
 
+def deploy_cloudflare():
+    """Deploy ke Cloudflare Pages (pengganti auto-deploy Netlify)."""
+    print("  ☁️  Deploy ke Cloudflare Pages...", end=" ", flush=True)
+    try:
+        r = subprocess.run(
+            ["bash", str(REPO_DIR / "scripts/deploy_cf.sh")],
+            capture_output=True, text=True, timeout=600, cwd=REPO_DIR,
+        )
+        if r.returncode == 0:
+            out = [l for l in (r.stdout or "").splitlines() if "Deployment complete" in l or "sekolah-ai.my.id" in l]
+            print("✅ Deploy OK" + (f" — {out[-2].split('https://')[-1]}" if len(out) >= 2 else ""))
+        else:
+            print(f"❌ Deploy gagal: {(r.stderr or r.stdout or '')[-200:]}")
+    except Exception as e:
+        print(f"⚠️  Deploy error: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--count", "-c", type=int, default=1)
@@ -474,9 +491,10 @@ def main():
         gen_og_images()
         if not args.no_push:
             git_push()
+            deploy_cloudflare()
             for t, s, d in published:
                 auto_social_post(t, s, d)
-            print("  🌐 Netlify auto-deploy dalam ~2 menit")
+            print("  🌐 Cloudflare Pages sudah ter-update")
     else:
         print("  ❌ Gagal, cek error di atas")
     print(f"{'='*60}\n")
