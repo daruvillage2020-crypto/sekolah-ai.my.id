@@ -307,6 +307,25 @@ def save_article(article: dict, author: str = "Tim Sekolah AI") -> Path:
     return filepath
 
 
+def gen_embeddings():
+    """Hitung embedding semantik untuk artikel baru (idempotent)."""
+    script = REPO_DIR / "scripts" / "embed.py"
+    if not script.exists():
+        return
+    print("  🧠 Update semantic embeddings...", end=" ", flush=True)
+    try:
+        r = subprocess.run(
+            ["python3", str(script)],
+            cwd=str(REPO_DIR), capture_output=True, text=True, timeout=300,
+        )
+        if r.returncode == 0:
+            print("✅")
+        else:
+            print(f"⚠️  {r.stderr[:150]}")
+    except Exception as e:
+        print(f"⚠️  {e}")
+
+
 def gen_og_images():
     """Generate OG share images for any new articles (idempotent)."""
     script = REPO_DIR / "scripts" / "gen-og.mjs"
@@ -402,6 +421,7 @@ def main():
     print(f"\n{'='*60}")
     if successful > 0:
         print(f"  ✅ {successful} artikel sukses!")
+        gen_embeddings()
         gen_og_images()
         if not args.no_push:
             git_push()
