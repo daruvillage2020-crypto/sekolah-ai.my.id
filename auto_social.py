@@ -54,9 +54,34 @@ def post_telegram(title: str, url: str, desc: str) -> bool:
         return False
 
 
+def _fb_page_token(page_id: str) -> str | None:
+    """Ambil Page Access Token dari System User token (permanen).
+    Kalau FB_PAGE_ACCESS_TOKEN sudah diset & masih valid, pakai itu.
+    """
+    cached = os.environ.get("FB_PAGE_ACCESS_TOKEN")
+    if cached:
+        return cached
+    su = os.environ.get("FB_PAGE_TOKEN")
+    if not su:
+        return None
+    try:
+        url = (
+            "https://graph.facebook.com/v21.0/me/accounts?limit=200&access_token="
+            + su
+        )
+        with urlopen(url, timeout=30) as r:
+            d = json.loads(r.read())
+        for p in d.get("data", []):
+            if str(p.get("id")) == str(page_id):
+                return p.get("access_token")
+    except Exception as e:
+        print(f"    ⚠️  Gagal ambil Page token: {e}")
+    return None
+
+
 def post_facebook(title: str, url: str, desc: str) -> bool:
     page_id = os.environ.get("FB_PAGE_ID")
-    token = os.environ.get("FB_PAGE_TOKEN")
+    token = _fb_page_token(page_id) if page_id else None
     if not page_id or not token:
         return False
     msg = f"📚 {title}\n\n{desc}\n\nBaca selengkapnya: {url}"
