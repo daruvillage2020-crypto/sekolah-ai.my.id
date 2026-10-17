@@ -107,7 +107,7 @@ const fmt = (d: Date) =>
     <div class="grid gap-6 md:grid-cols-2">
       {latestPosts.map((post) => (
         <a
-          href={`/blog/${post.id}`}
+          href={`/blog/${post.id}/`}
           class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:shadow-xl"
         >
           {post.data.cover ? (

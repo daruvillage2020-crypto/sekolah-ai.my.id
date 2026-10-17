@@ -439,7 +439,8 @@ def deploy_cloudflare():
             out = [l for l in (r.stdout or "").splitlines() if "Deployment complete" in l or "sekolah-ai.my.id" in l]
             print("✅ Deploy OK" + (f" — {out[-2].split('https://')[-1]}" if len(out) >= 2 else ""))
         else:
-            print(f"❌ Deploy gagal: {(r.stderr or r.stdout or '')[-200:]}")
+            print(f"❌ Deploy gagal: {(r.stderr or r.stdout or '')[-500:]}")
+            print("⚠️  SITE TIDAK TER-UPDATE — artikel mungkin belum tayang!")
     except Exception as e:
         print(f"⚠️  Deploy error: {e}")
 
